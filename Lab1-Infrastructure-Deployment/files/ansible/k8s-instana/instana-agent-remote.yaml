@@ -1,0 +1,54 @@
+---
+# Instana Remote Agent Custom Resource
+# This file deploys the Instana remote agent to monitor your K3s cluster
+# 
+# IMPORTANT: Before deploying, replace the following placeholders:
+# 1. <AGENT_KEY> - Your Instana agent key from the Instana UI
+# 2. <AGENT_ZONE> - The zone name for your cluster (e.g., k3s-ibm-cloud)
+# 3. <ENDPOINT_HOST> - Your Instana endpoint (e.g., ingress-red-saas.instana.io)
+# 4. <CONCERT_BASE_URL> - Concert base URL for CVE scanning (optional)
+# 5. <INSTANCE_ID> - Concert instance ID (optional)
+# 6. <API_KEY> - Concert API Key (optional)
+# 7. <DOWNLOAD_KEY> - Download key if using self-hosted environment (optional)
+
+apiVersion: instana.io/v1
+kind: InstanaAgentRemote
+metadata:
+  name: remote-agent
+  namespace: instana-agent
+spec:
+  zone:
+    name: t3-lab-k3s-zone-##LAB_USER_ID##  # Agent zone for K3s cluster on IBM Cloud
+  
+  agent:
+    key: ##INSTANA_KEY##  # Instana agent key
+    downloadKey: ##INSTANA_KEY##  # Instana download key
+    endpointHost: ##INSTANA_HOST##  # Instana SaaS endpoint
+    endpointPort: "443"
+
+    env:
+      INSTANA_KUBERNETES_CLUSTER_NAME: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+
+    configuration_yaml: |
+      # Remote Sensor Configurations
+      
+      # CVE Scanning (Optional - uncomment and configure if needed)
+      # com.instana.plugin.cve:
+      #   enabled: true
+      #   concert:
+      #     base_url: '<CONCERT_BASE_URL>'  # Concert base url
+      #     instance_id: '<INSTANCE_ID>'    # Concert instance id
+      #     api_key: '<API_KEY>'            # Concert API Key
+      #     poll_rate: 10
+      
+      # Turbonomic Integration (Optional - uncomment and configure if needed)
+      # com.instana.plugin.turbonomic:
+      #   enabled: true
+      #   turbonomic_url: 'https://turbonomic.example.com'
+      #   turbonomic_username: 'admin'
+      #   turbonomic_password: 'password'
+      
+      # Additional sensor configurations can be added here
+      # See: https://www.ibm.com/docs/en/instana-observability/current?topic=agents-configuring
+
+# Made with Bob

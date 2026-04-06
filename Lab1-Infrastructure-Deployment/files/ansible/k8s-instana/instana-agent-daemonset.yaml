@@ -1,0 +1,36 @@
+---
+# Instana Agent DaemonSet for Full Kubernetes Monitoring
+# This deploys the standard Instana agent that monitors the Kubernetes cluster
+
+apiVersion: instana.io/v1
+kind: InstanaAgent
+metadata:
+  name: instana-agent
+  namespace: instana-agent
+spec:
+  zone:
+    name: t3-lab-k3s-zone-##LAB_USER_ID##
+  
+  cluster:
+    name: t3-lab-k3s-cluster-##LAB_USER_ID##
+  
+  agent:
+    key: ##INSTANA_KEY##
+    downloadKey: ##INSTANA_KEY##
+    endpointHost: ##INSTANA_HOST##
+    endpointPort: "443"
+    
+    env:
+      INSTANA_AGENT_TAGS: "k3s,ibm-cloud,t3-lab-##LAB_USER_ID##"
+    
+    # Enable Kubernetes monitoring
+    configuration_yaml: |
+      # Kubernetes monitoring configuration
+      com.instana.plugin.kubernetes:
+        enabled: true
+      
+      # Host monitoring
+      com.instana.plugin.host:
+        enabled: true
+
+# Made with Bob

@@ -1,0 +1,199 @@
+---
+# Ansible Playbook to Deploy Instana Remote Agent to K3s Cluster
+# This playbook installs the Instana operator and deploys the remote agent
+# 
+# Prerequisites:
+# 1. K3s cluster must be running
+# 2. Update instana-agent-remote.yaml with your Instana credentials
+# 3. Ensure you have the correct agent key, endpoint, and zone configured
+
+- name: Deploy Instana Remote Agent to K3s Cluster
+  hosts: K3S_CLUSTER
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    kubeconfig_path: "/etc/rancher/k3s/k3s.yaml"
+    instana_namespace: "instana-agent"
+    instana_operator_url: "https://github.com/instana/instana-agent-operator/releases/latest/download/instana-agent-operator.yaml"
+    
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg:
+          - "=========================================="
+          - "Instana Remote Agent Deployment"
+          - "=========================================="
+          - "This playbook will:"
+          - "1. Verify K3s cluster is ready"
+          - "2. Install Instana agent operator"
+          - "3. Deploy Instana remote agent"
+          - "=========================================="
+    
+    - name: Check if K3s is running
+      systemd:
+        name: k3s
+        state: started
+      register: k3s_status
+      
+    - name: Wait for K3s to be ready
+      command: kubectl get nodes
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: nodes_status
+      until: "'Ready' in nodes_status.stdout"
+      retries: 10
+      delay: 5
+      
+    - name: Display K3s cluster status
+      debug:
+        msg: "{{ nodes_status.stdout_lines }}"
+    
+    - name: Check if instana-agent namespace already exists
+      shell: kubectl get namespace {{ instana_namespace }} --ignore-not-found
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: namespace_check
+      changed_when: false
+      
+    - name: Install Instana agent operator
+      shell: kubectl apply -f {{ instana_operator_url }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: operator_install
+      
+    - name: Display operator installation result
+      debug:
+        msg: "{{ operator_install.stdout_lines }}"
+        
+    - name: Wait for instana-agent namespace to be created
+      command: kubectl get namespace {{ instana_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: namespace_status
+      until: namespace_status.rc == 0
+      retries: 30
+      delay: 2
+      
+    - name: Wait for operator deployment to be ready
+      command: kubectl wait --for=condition=available deployment/instana-agent-controller-manager -n {{ instana_namespace }} --timeout=300s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: operator_ready
+      ignore_errors: yes
+      
+    - name: Check operator pod status
+      command: kubectl get pods -n {{ instana_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: operator_pods
+      
+    - name: Display operator pod status
+      debug:
+        msg: "{{ operator_pods.stdout_lines }}"
+        
+    - name: Verify instana-agent-daemonset.yaml exists locally
+      stat:
+        path: k8s-instana/instana-agent-daemonset.yaml
+      delegate_to: localhost
+      become: no
+      register: agent_yaml_local
+      
+    - name: Fail if instana-agent-daemonset.yaml not found
+      fail:
+        msg: "instana-agent-daemonset.yaml not found in k8s-instana/ directory"
+      when: not agent_yaml_local.stat.exists
+      
+    - name: Copy Instana agent DaemonSet to remote server
+      copy:
+        src: k8s-instana/instana-agent-daemonset.yaml
+        dest: /tmp/instana-agent-daemonset.yaml
+        mode: '0644'
+        
+    - name: Deploy Instana Agent DaemonSet (with K8s monitoring)
+      command: kubectl apply -f /tmp/instana-agent-daemonset.yaml
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: agent_deploy
+      
+    - name: Display agent deployment result
+      debug:
+        msg: "{{ agent_deploy.stdout_lines }}"
+        
+    - name: Wait for agent pods to be created (may take a few minutes)
+      shell: kubectl get pods -n {{ instana_namespace }} | grep -v operator || true
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: agent_pods_check
+      until: "'instana-agent' in agent_pods_check.stdout or 'remote-agent' in agent_pods_check.stdout"
+      retries: 30
+      delay: 10
+      ignore_errors: yes
+      
+    - name: Get all resources in instana-agent namespace
+      command: kubectl get all -n {{ instana_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: instana_resources
+      
+    - name: Display Instana resources
+      debug:
+        msg: "{{ instana_resources.stdout_lines }}"
+        
+    - name: Get InstanaAgent custom resource status
+      command: kubectl get instanaagent -n {{ instana_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: agent_cr_status
+      ignore_errors: yes
+      
+    - name: Display custom resource status
+      debug:
+        msg: "{{ agent_cr_status.stdout_lines }}"
+      when: agent_cr_status.rc == 0
+      
+    - name: Get agent pod logs (if available)
+      shell: kubectl logs -n {{ instana_namespace }} -l app.kubernetes.io/name=instana-agent --tail=50 || echo "No agent pods found yet"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: agent_logs
+      ignore_errors: yes
+      
+    - name: Display agent logs
+      debug:
+        msg: "{{ agent_logs.stdout_lines }}"
+      when: agent_logs.stdout != ""
+      
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "=========================================="
+          - "Instana Remote Agent Deployment Complete!"
+          - "=========================================="
+          - "Namespace: {{ instana_namespace }}"
+          - ""
+          - "To verify the installation:"
+          - "  kubectl get pods -n {{ instana_namespace }}"
+          - "  kubectl get instanaagentremote -n {{ instana_namespace }}"
+          - ""
+          - "To view agent logs:"
+          - "  kubectl logs -f -n {{ instana_namespace }} -l app.kubernetes.io/name=instana-agent"
+          - ""
+          - "To check operator logs:"
+          - "  kubectl logs -f deployment/instana-agent-operator -n {{ instana_namespace }}"
+          - ""
+          - "To update agent configuration:"
+          - "  1. Edit k8s-instana/instana-agent-remote.yaml"
+          - "  2. Run: kubectl apply -f k8s-instana/instana-agent-remote.yaml"
+          - ""
+          - "To uninstall:"
+          - "  kubectl delete -f /tmp/instana-agent-remote.yaml"
+          - "  kubectl delete -f {{ instana_operator_url }}"
+          - "=========================================="
+          - ""
+          - "IMPORTANT: If you see placeholder warnings above,"
+          - "update k8s-instana/instana-agent-remote.yaml with your"
+          - "Instana credentials and rerun this playbook."
+          - "=========================================="
+
+# Made with Bob

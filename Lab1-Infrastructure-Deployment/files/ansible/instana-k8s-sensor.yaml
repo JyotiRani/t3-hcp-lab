@@ -1,0 +1,110 @@
+---
+# Instana K8s Sensor - Required for Kubernetes Platform Monitoring
+# This is separate from the agent DaemonSet and collects K8s-specific metrics
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: instana-agent-key
+  namespace: instana-agent
+data:
+  com.instana.agent.main.sender.Backend.cfg: |
+    ##INSTANA_KEY##
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: instana-k8s-sensor
+  namespace: instana-agent
+  labels:
+    app: instana-k8s-sensor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: instana-k8s-sensor
+  template:
+    metadata:
+      labels:
+        app: instana-k8s-sensor
+    spec:
+      serviceAccountName: instana-agent
+      containers:
+      - name: k8s-sensor
+        image: icr.io/instana/k8sensor:latest
+        env:
+        - name: INSTANA_AGENT_ENDPOINT
+          value: "##INSTANA_HOST##"
+        - name: INSTANA_AGENT_ENDPOINT_PORT
+          value: "443"
+        - name: INSTANA_AGENT_KEY
+          value: "##INSTANA_KEY##"
+        - name: INSTANA_KEY
+          value: "##INSTANA_KEY##"
+        - name: INSTANA_DOWNLOAD_KEY
+          value: "##INSTANA_KEY##"
+        - name: INSTANA_ZONE
+          value: "t3-lab-k3s-zone-##LAB_USER_ID##"
+        - name: CLUSTER_NAME
+          value: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+        - name: INSTANA_KUBERNETES_CLUSTER_NAME
+          value: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+        - name: INSTANA_AGENT_KEY_FILE_PATH
+          value: "/opt/instana/agent/etc/instana/com.instana.agent.main.sender.Backend.cfg"
+        volumeMounts:
+        - name: agent-key
+          mountPath: /opt/instana/agent/etc/instana
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: agent-key
+        configMap:
+          name: instana-agent-key
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: instana-agent
+  namespace: instana-agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: instana-agent
+rules:
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: instana-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: instana-agent
+subjects:
+- kind: ServiceAccount
+  name: instana-agent
+  namespace: instana-agent
+
+# Made with Bob

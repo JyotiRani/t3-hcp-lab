@@ -1,0 +1,55 @@
+---
+swagger: "2.0"
+info:
+  version: "1.0"
+  title: "supplychain"
+host: "dev3553628.a-vir-r1.int.ipaas.automation.ibm.com"
+basePath: "/integration/restv2/development/flc9564fd4f1168abf3f7d23/supplychain"
+schemes:
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /trackOrder:
+    post:
+      operationId: "trackOrder_POST_1"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/body"
+      security:
+      - _apiKeyAuth: []
+      responses:
+        "200":
+          description: "OK"
+        "401":
+          description: "Access Denied"
+securityDefinitions:
+  _apiKeyAuth:
+    type: "apiKey"
+    name: "X-INSTANCE-API-KEY"
+    in: "header"
+definitions:
+  body:
+    type: "object"
+    required:
+    - "customerId"
+    - "issueType"
+    - "message"
+    - "orderId"
+    - "ticketId"
+    properties:
+      ticketId:
+        type: "string"
+      customerId:
+        type: "string"
+      orderId:
+        type: "string"
+      issueType:
+        type: "string"
+      message:
+        type: "string"

@@ -1,0 +1,60 @@
+---
+# Ansible Playbook to Deploy Sample Microservice Application to K3s
+# This playbook deploys a complete microservice stack with frontend, backend, and database
+
+- name: Deploy Microservice Application to K3s Cluster
+  hosts: K3S_CLUSTER
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    app_namespace: "logistics"
+    app_name: "logistics-app"
+    kubeconfig_path: "/etc/rancher/k3s/k3s.yaml"
+    
+  tasks:
+    - name: Check if K3s is running
+      systemd:
+        name: k3s
+        state: started
+      register: k3s_status
+      
+    - name: Wait for K3s to be ready
+      command: kubectl get nodes
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: nodes_status
+      until: "'Ready' in nodes_status.stdout"
+      retries: 10
+      delay: 5
+      
+    - name: Copy Kubernetes manifests to remote server
+      copy:
+        src: "{{ item }}"
+        dest: "/tmp/{{ item | basename }}"
+        mode: '0644'
+      with_fileglob:
+        - "k8s-app/*.yaml"
+
+    - name: Apply Kubernetes manifests
+      command: kubectl apply -f /tmp/ --timeout=300s
+      
+    - name: Get deployment status
+      command: kubectl get all -n {{ app_namespace }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: deployment_status
+      
+    - name: Display access instructions
+      debug:
+        msg:
+          - "=========================================="
+          - "Microservice Application Deployed!"
+          - "=========================================="
+          - "Namespace: {{ app_namespace }}"
+          - ""
+          - "To check status:"
+          - "  kubectl get pods -n {{ app_namespace }}"
+          - "=========================================="
+
+# Made with Bob

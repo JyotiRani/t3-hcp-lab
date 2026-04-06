@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "Logistics Integration API",
+    "description": "Test suite for webMethods integration with AI agent",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_URL}}/health",
+              "host": ["{{API_URL}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shipment Analysis",
+      "item": [
+        {
+          "name": "Analyze Delay - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('shipmentId');",
+                  "    pm.expect(jsonData).to.have.property('analysisResult');",
+                  "    pm.expect(jsonData.status).to.eql('success');",
+                  "});",
+                  "",
+                  "pm.test(\"AI analysis is present\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.analysisResult).to.have.property('aiAnalysis');",
+                  "    pm.expect(jsonData.analysisResult.aiAnalysis).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is acceptable\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"SHP-2024-001\",\n  \"orderId\": \"ORD-2024-001\",\n  \"currentLocation\": \"Chicago, IL\",\n  \"destination\": \"New York, NY\",\n  \"expectedDeliveryDate\": \"2024-03-31T18:00:00Z\",\n  \"currentStatus\": \"in_transit\",\n  \"delayReason\": \"Weather conditions\"\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Delay - Missing Required Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message is present\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('error');",
+                  "    pm.expect(jsonData.message).to.include('required');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORD-2024-001\",\n  \"currentLocation\": \"Chicago, IL\",\n  \"destination\": \"New York, NY\",\n  \"expectedDeliveryDate\": \"2024-03-31T18:00:00Z\",\n  \"currentStatus\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Delay - Invalid Date Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error indicates invalid format\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('error');",
+                  "    pm.expect(jsonData.message).to.include('invalid');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"SHP-2024-002\",\n  \"orderId\": \"ORD-2024-002\",\n  \"currentLocation\": \"Chicago, IL\",\n  \"destination\": \"New York, NY\",\n  \"expectedDeliveryDate\": \"invalid-date\",\n  \"currentStatus\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Delay - Invalid API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test(\"Unauthorized error\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Unauthorized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "invalid-api-key"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"SHP-2024-003\",\n  \"orderId\": \"ORD-2024-003\",\n  \"currentLocation\": \"Chicago, IL\",\n  \"destination\": \"New York, NY\",\n  \"expectedDeliveryDate\": \"2024-03-31T18:00:00Z\",\n  \"currentStatus\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Delay - Multiple Shipments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All shipments analyzed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"shipmentId\": \"SHP-2024-004\",\n    \"orderId\": \"ORD-2024-004\",\n    \"currentLocation\": \"Chicago, IL\",\n    \"destination\": \"New York, NY\",\n    \"expectedDeliveryDate\": \"2024-03-31T18:00:00Z\",\n    \"currentStatus\": \"in_transit\"\n  },\n  {\n    \"shipmentId\": \"SHP-2024-005\",\n    \"orderId\": \"ORD-2024-005\",\n    \"currentLocation\": \"Los Angeles, CA\",\n    \"destination\": \"Seattle, WA\",\n    \"expectedDeliveryDate\": \"2024-04-01T12:00:00Z\",\n    \"currentStatus\": \"in_transit\"\n  },\n  {\n    \"shipmentId\": \"SHP-2024-006\",\n    \"orderId\": \"ORD-2024-006\",\n    \"currentLocation\": \"Miami, FL\",\n    \"destination\": \"Boston, MA\",\n    \"expectedDeliveryDate\": \"2024-04-02T09:00:00Z\",\n    \"currentStatus\": \"in_transit\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Performance Tests",
+      "item": [
+        {
+          "name": "Load Test - 10 Concurrent Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time under load\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"SHP-LOAD-{{$randomInt}}\",\n  \"orderId\": \"ORD-LOAD-{{$randomInt}}\",\n  \"currentLocation\": \"{{$randomCity}}\",\n  \"destination\": \"{{$randomCity}}\",\n  \"expectedDeliveryDate\": \"2024-03-31T18:00:00Z\",\n  \"currentStatus\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shipments/analyze-delay",
+              "host": ["{{API_URL}}"],
+              "path": ["shipments", "analyze-delay"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "API_URL",
+      "value": "http://your-integration-server:5555/rad/LogisticsIntegration.api:ShipmentAnalysisAPI",
+      "type": "string"
+    },
+    {
+      "key": "API_KEY",
+      "value": "your-api-key-here",
+      "type": "string"
+    }
+  ]
+}

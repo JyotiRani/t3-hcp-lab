@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-gateway-config
+  namespace: logistics
+data:
+  nginx.conf: |
+    events {
+      worker_connections 1024;
+    }
+    
+    http {
+      # Enable logging
+      access_log /var/log/nginx/access.log;
+      error_log /var/log/nginx/error.log;
+      
+      # Define upstream services
+      
+      upstream frontend {
+        server frontend-service:8000;
+      }
+
+      upstream auth {
+        server auth-service:8001;
+      }
+      
+      upstream order {
+        server order-service:8002;
+      }
+      
+      upstream shipment {
+        server shipment-service:8003;
+      }
+      
+      upstream tracking {
+        server tracking-service:8004;
+      }
+      
+      # upstream notification {
+      #   server notification-service:8005;
+      # }
+      
+      # upstream ai-agent {
+      #   server ai-agent-service:8006;
+      # }
+      
+      # Main server block
+      server {
+        listen 80;
+        server_name _;
+        
+        # Enable CORS for all routes
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+          return 204;
+        }
+        
+        # Health check endpoint
+        location /health {
+          return 200 "OK\n";
+          add_header Content-Type text/plain;
+        }
+
+        # Default route / 
+        location / {
+          proxy_pass http://frontend/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Auth service routes
+        location = /auth {
+          return 301 $scheme://$http_host/auth/;
+        }
+        
+        location /auth/ {
+          proxy_pass http://auth/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Order service routes
+        location = /order {
+          return 301 $scheme://$http_host/order/;
+        }
+        
+        location /order/ {
+          proxy_pass http://order/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Shipment service routes
+        location = /shipment {
+          return 301 $scheme://$http_host/shipment/;
+        }
+        
+        location /shipment/ {
+          proxy_pass http://shipment/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Tracking service routes
+        location = /tracking {
+          return 301 $scheme://$http_host/tracking/;
+        }
+        
+        location /tracking/ {
+          proxy_pass http://tracking/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # # Notification service routes
+        # location /notifications/ {
+        #   proxy_pass http://notifications/;
+        #   proxy_set_header Host $host;
+        #   proxy_set_header X-Real-IP $remote_addr;
+        #   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # }
+        
+        # # AI Agent service routes
+        # location /ai-agent/ {
+        #   proxy_pass http://ai-agent/;
+        #   proxy_set_header Host $host;
+        #   proxy_set_header X-Real-IP $remote_addr;
+        #   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # }
+        
+
+      }
+    }
