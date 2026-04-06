@@ -9,7 +9,6 @@
 -- ============================================================================
 -- 1. USERS DATA (5 users)
 -- ============================================================================
--- Password for all users: admin123, manager123, driver123, customer123
 -- Hashed with bcrypt (rounds=12)
 
 INSERT INTO users (user_id, username, email, password_hash, full_name, phone, role, is_active) VALUES
@@ -242,15 +241,15 @@ SELECT
 UNION ALL
 SELECT '================================'
 UNION ALL
-SELECT 'Username: admin | Password: admin123 | Role: admin'
+SELECT 'Username: admin | Password: xxxxx | Role: admin'
 UNION ALL
-SELECT 'Username: manager | Password: manager123 | Role: admin'
+SELECT 'Username: manager | Password: xxxxxx | Role: admin'
 UNION ALL
-SELECT 'Username: driver1 | Password: driver123 | Role: driver'
+SELECT 'Username: driver1 | Password: xxxxxx | Role: driver'
 UNION ALL
-SELECT 'Username: driver2 | Password: driver123 | Role: driver'
+SELECT 'Username: driver2 | Password: xxxxx | Role: driver'
 UNION ALL
-SELECT 'Username: customer1 | Password: customer123 | Role: customer'
+SELECT 'Username: customer1 | Password: xxxxxx | Role: customer'
 UNION ALL
 SELECT '================================';
 
