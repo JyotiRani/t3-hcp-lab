@@ -9,6 +9,7 @@
 -- ============================================================================
 -- 1. USERS DATA (5 users)
 -- ============================================================================
+-- Password for all users: admin123, manager123, driver123, customer123
 -- Hashed with bcrypt (rounds=12)
 
 INSERT INTO users (user_id, username, email, password_hash, full_name, phone, role, is_active) VALUES
@@ -206,6 +207,136 @@ INSERT INTO feedback (feedback_id, shipment_id, user_id, rating, comment, create
 
 ('ee0e8400-e29b-41d4-a716-446655440004', 'aa0e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440004', 4, 'Package is on the way. Looking forward to delivery.', '2024-03-19 20:00:00');
 
+
+-- Seed Data for AI Agent Service
+-- Populates weather_data and news_events tables with realistic scenarios
+
+-- ============================================================================
+-- WEATHER DATA SEEDING
+-- ============================================================================
+
+-- New York, NY Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('New York, NY', 'clear', '72°F', 'Sunny', 'low', 0, 'Clear skies, optimal driving conditions'),
+('New York, NY', 'rain', '58°F', 'Heavy Rain', 'medium', 45, 'Heavy rain expected, reduced visibility'),
+('New York, NY', 'snow', '28°F', 'Heavy Snow', 'high', 90, 'Winter storm warning, hazardous roads');
+
+-- Philadelphia, PA Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Philadelphia, PA', 'clear', '68°F', 'Partly Cloudy', 'low', 0, 'Partly cloudy, good conditions'),
+('Philadelphia, PA', 'rain', '55°F', 'Rain', 'medium', 30, 'Moderate rain, slippery roads'),
+('Philadelphia, PA', 'snow', '30°F', 'Snow', 'high', 60, 'Snow accumulation expected');
+
+-- Chicago, IL Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Chicago, IL', 'clear', '65°F', 'Clear', 'low', 0, 'Clear weather, normal traffic'),
+('Chicago, IL', 'fog', '52°F', 'Dense Fog', 'high', 60, 'Dense fog, reduced visibility'),
+('Chicago, IL', 'storm', '62°F', 'Thunderstorm', 'high', 75, 'Severe thunderstorm warning');
+
+-- Denver, CO Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Denver, CO', 'clear', '58°F', 'Clear', 'low', 0, 'Clear mountain weather'),
+('Denver, CO', 'snow', '25°F', 'Heavy Snow', 'high', 120, 'Mountain snow, chain requirements');
+
+-- Las Vegas, NV Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Las Vegas, NV', 'clear', '95°F', 'Sunny', 'low', 0, 'Hot and dry, excellent conditions'),
+('Las Vegas, NV', 'heat', '110°F', 'Extreme Heat', 'medium', 20, 'Extreme heat advisory');
+
+-- Los Angeles, CA Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Los Angeles, CA', 'clear', '78°F', 'Sunny', 'low', 0, 'Sunny California weather'),
+('Los Angeles, CA', 'traffic', '82°F', 'Hazy', 'medium', 35, 'Heavy traffic, smog alert');
+
+-- San Francisco, CA Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('San Francisco, CA', 'clear', '65°F', 'Partly Cloudy', 'low', 0, 'Mild coastal weather'),
+('San Francisco, CA', 'fog', '58°F', 'Foggy', 'medium', 40, 'Typical SF fog, reduced visibility');
+
+-- Milwaukee, WI Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Milwaukee, WI', 'clear', '62°F', 'Clear', 'low', 0, 'Clear Midwest weather'),
+('Milwaukee, WI', 'snow', '22°F', 'Snow', 'high', 70, 'Lake effect snow');
+
+-- Seattle, WA Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Seattle, WA', 'clear', '60°F', 'Partly Cloudy', 'low', 0, 'Typical Seattle weather'),
+('Seattle, WA', 'rain', '52°F', 'Rain', 'medium', 25, 'Light rain, typical conditions');
+
+-- Boston, MA Weather Scenarios
+INSERT INTO weather_data (location, scenario, temperature, conditions, severity, delay_minutes, summary) VALUES
+('Boston, MA', 'clear', '68°F', 'Clear', 'low', 0, 'Clear New England weather'),
+('Boston, MA', 'snow', '28°F', 'Heavy Snow', 'high', 85, 'Nor''easter snow storm');
+
+-- ============================================================================
+-- NEWS EVENTS SEEDING
+-- ============================================================================
+
+-- New York, NY News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('New York, NY', 'I-80 Construction Delays Expected', 'Major highway construction on I-80 causing 30-minute delays', 'medium', 30, 'NY Traffic Authority', CURRENT_DATE, 'construction'),
+('New York, NY', 'Port Workers Strike Resolved', 'NYC port operations back to normal', 'low', 0, 'Port Authority', CURRENT_DATE - 1, 'strike'),
+('New York, NY', 'Manhattan Bridge Maintenance', 'Overnight maintenance may cause delays', 'low', 15, 'NYC DOT', CURRENT_DATE + 1, 'construction');
+
+-- Philadelphia, PA News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Philadelphia, PA', 'Bridge Maintenance on I-95', 'Overnight bridge work may cause delays', 'low', 15, 'PennDOT', CURRENT_DATE, 'construction'),
+('Philadelphia, PA', 'Eagles Game Traffic', 'Stadium area congestion expected', 'medium', 35, 'Philadelphia Police', CURRENT_DATE + 2, 'event');
+
+-- Chicago, IL News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Chicago, IL', 'Major Accident on I-90', 'Multi-vehicle accident causing significant delays', 'high', 60, 'Illinois State Police', CURRENT_DATE, 'accident'),
+('Chicago, IL', 'Chicago Marathon This Weekend', 'Downtown road closures expected', 'medium', 45, 'Chicago DOT', CURRENT_DATE + 3, 'event'),
+('Chicago, IL', 'O''Hare Airport Congestion', 'Heavy traffic near airport', 'medium', 30, 'Chicago Traffic', CURRENT_DATE, 'traffic');
+
+-- Denver, CO News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Denver, CO', 'Mountain Pass Closed Due to Snow', 'I-70 Eisenhower Tunnel closed temporarily', 'high', 90, 'Colorado DOT', CURRENT_DATE, 'weather'),
+('Denver, CO', 'Rockies Game Traffic', 'Stadium area delays expected', 'low', 20, 'Denver Police', CURRENT_DATE + 1, 'event');
+
+-- Los Angeles, CA News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Los Angeles, CA', 'Film Production Causing Road Closures', 'Hollywood Blvd closed for filming', 'low', 20, 'LA Film Office', CURRENT_DATE, 'event'),
+('Los Angeles, CA', 'Port of LA Congestion', 'Increased wait times at port facilities', 'medium', 40, 'Port of LA', CURRENT_DATE, 'traffic'),
+('Los Angeles, CA', 'I-405 Construction', 'Major freeway construction ongoing', 'high', 55, 'Caltrans', CURRENT_DATE, 'construction');
+
+-- San Francisco, CA News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('San Francisco, CA', 'Bay Bridge Toll Plaza Backup', 'Heavy commute traffic expected', 'medium', 35, 'Caltrans', CURRENT_DATE, 'traffic'),
+('San Francisco, CA', 'Tech Conference Downtown', 'Downtown congestion from conference', 'medium', 25, 'SF Events', CURRENT_DATE + 1, 'event');
+
+-- Milwaukee, WI News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Milwaukee, WI', 'Brewers Game Traffic', 'Stadium area congestion expected', 'low', 25, 'Milwaukee Police', CURRENT_DATE, 'event'),
+('Milwaukee, WI', 'I-94 Resurfacing', 'Highway resurfacing causing delays', 'medium', 30, 'Wisconsin DOT', CURRENT_DATE, 'construction');
+
+-- Seattle, WA News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Seattle, WA', 'Ferry Delays Due to Weather', 'Puget Sound ferry delays', 'medium', 40, 'Washington State Ferries', CURRENT_DATE, 'weather'),
+('Seattle, WA', 'Seahawks Game Traffic', 'Stadium area congestion', 'medium', 30, 'Seattle Police', CURRENT_DATE + 2, 'event');
+
+-- Boston, MA News Events
+INSERT INTO news_events (location, title, description, impact, delay_minutes, source, event_date, event_type) VALUES
+('Boston, MA', 'Big Dig Tunnel Maintenance', 'Tunnel maintenance causing delays', 'medium', 35, 'MassDOT', CURRENT_DATE, 'construction'),
+('Boston, MA', 'Red Sox Game Traffic', 'Fenway area congestion', 'low', 20, 'Boston Police', CURRENT_DATE + 1, 'event');
+
+-- ============================================================================
+-- ROUTE ANALYSIS SEEDING (Common Routes)
+-- ============================================================================
+
+INSERT INTO route_analysis (origin, destination, waypoints, total_distance_km, estimated_duration_minutes, route_hash) VALUES
+('New York, NY', 'Philadelphia, PA', '["Newark, NJ", "Trenton, NJ"]'::jsonb, 152, 120, MD5('New York, NY|Philadelphia, PA')),
+('New York, NY', 'Boston, MA', '["New Haven, CT", "Hartford, CT", "Worcester, MA"]'::jsonb, 346, 240, MD5('New York, NY|Boston, MA')),
+('Chicago, IL', 'Milwaukee, WI', '["Kenosha, WI"]'::jsonb, 148, 105, MD5('Chicago, IL|Milwaukee, WI')),
+('Los Angeles, CA', 'San Francisco, CA', '["Bakersfield, CA", "Fresno, CA", "San Jose, CA"]'::jsonb, 615, 360, MD5('Los Angeles, CA|San Francisco, CA')),
+('Denver, CO', 'Las Vegas, NV', '["Grand Junction, CO", "Moab, UT"]'::jsonb, 1203, 720, MD5('Denver, CO|Las Vegas, NV')),
+('Seattle, WA', 'San Francisco, CA', '["Portland, OR", "Eugene, OR", "Sacramento, CA"]'::jsonb, 1287, 780, MD5('Seattle, WA|San Francisco, CA'));
+
+-- ============================================================================
+-- VERIFICATION QUERIES
+-- ============================================================================
+
+
 -- ============================================================================
 -- DATA INSERTION COMPLETE
 -- ============================================================================
@@ -235,21 +366,42 @@ UNION ALL
 SELECT 'feedback', COUNT(*) FROM feedback
 ORDER BY table_name;
 
+
+-- Count records
+SELECT 'weather_data' as table_name, COUNT(*) as record_count FROM weather_data
+UNION ALL
+SELECT 'news_events', COUNT(*) FROM news_events
+UNION ALL
+SELECT 'route_analysis', COUNT(*) FROM route_analysis;
+
+-- Show sample data
+SELECT 'Sample Weather Data:' as info;
+SELECT location, scenario, severity, delay_minutes FROM weather_data LIMIT 5;
+
+SELECT 'Sample News Events:' as info;
+SELECT location, title, impact, delay_minutes FROM news_events LIMIT 5;
+
+SELECT 'Sample Routes:' as info;
+SELECT origin, destination, total_distance_km FROM route_analysis LIMIT 5;
+
+-- Made with Bob
+
+
 -- Display demo user credentials
 SELECT 
     '=== DEMO USER CREDENTIALS ===' as info
 UNION ALL
 SELECT '================================'
 UNION ALL
-SELECT 'Username: admin | Password: xxxxx | Role: admin'
+SELECT 'Username: admin | Password: admin123 | Role: admin'
 UNION ALL
-SELECT 'Username: manager | Password: xxxxxx | Role: admin'
+SELECT 'Username: manager | Password: manager123 | Role: admin'
 UNION ALL
-SELECT 'Username: driver1 | Password: xxxxxx | Role: driver'
+SELECT 'Username: driver1 | Password: driver123 | Role: driver'
 UNION ALL
-SELECT 'Username: driver2 | Password: xxxxx | Role: driver'
+SELECT 'Username: driver2 | Password: driver123 | Role: driver'
 UNION ALL
-SELECT 'Username: customer1 | Password: xxxxxx | Role: customer'
+SELECT 'Username: customer1 | Password: customer123 | Role: customer'
 UNION ALL
 SELECT '================================';
 

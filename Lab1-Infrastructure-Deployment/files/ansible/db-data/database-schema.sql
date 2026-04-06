@@ -19,6 +19,20 @@ DROP TABLE IF EXISTS drivers CASCADE;
 DROP TABLE IF EXISTS trucks CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
+
+-- Drop views first (they depend on tables)
+DROP VIEW IF EXISTS recent_agent_tasks CASCADE;
+DROP VIEW IF EXISTS active_news_events CASCADE;
+DROP VIEW IF EXISTS active_weather_scenarios CASCADE;
+
+-- Drop tables in reverse dependency order
+DROP TABLE IF EXISTS agent_analysis_logs CASCADE;
+DROP TABLE IF EXISTS agent_tasks CASCADE;
+DROP TABLE IF EXISTS route_analysis CASCADE;
+DROP TABLE IF EXISTS news_events CASCADE;
+DROP TABLE IF EXISTS weather_data CASCADE;
+
+
 -- -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -243,6 +257,239 @@ CREATE TABLE feedback (
 CREATE INDEX idx_feedback_shipment ON feedback(shipment_id);
 CREATE INDEX idx_feedback_user ON feedback(user_id);
 CREATE INDEX idx_feedback_rating ON feedback(rating);
+
+
+
+-- ============================================================================
+-- 1. WEATHER DATA TABLE
+-- ============================================================================
+-- Stores weather information for different locations and scenarios
+CREATE TABLE IF NOT EXISTS weather_data (
+    weather_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    location VARCHAR(255) NOT NULL,
+    scenario VARCHAR(50) NOT NULL CHECK (scenario IN ('clear', 'rain', 'snow', 'fog', 'storm', 'heat', 'traffic')),
+    temperature VARCHAR(20),
+    conditions VARCHAR(100),
+    severity VARCHAR(20) CHECK (severity IN ('low', 'medium', 'high')),
+    delay_minutes INTEGER DEFAULT 0,
+    summary TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX idx_weather_location ON weather_data(location);
+CREATE INDEX idx_weather_scenario ON weather_data(scenario);
+CREATE INDEX idx_weather_severity ON weather_data(severity);
+
+COMMENT ON TABLE weather_data IS 'Stores weather scenarios and their impact on shipments';
+COMMENT ON COLUMN weather_data.scenario IS 'Weather scenario type: clear, rain, snow, fog, storm, heat, traffic';
+COMMENT ON COLUMN weather_data.severity IS 'Impact severity: low, medium, high';
+
+-- ============================================================================
+-- 2. NEWS EVENTS TABLE
+-- ============================================================================
+-- Stores news and traffic events affecting logistics
+CREATE TABLE IF NOT EXISTS news_events (
+    news_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    location VARCHAR(255) NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    impact VARCHAR(20) CHECK (impact IN ('low', 'medium', 'high')),
+    delay_minutes INTEGER DEFAULT 0,
+    source VARCHAR(255),
+    event_date DATE,
+    event_type VARCHAR(50) CHECK (event_type IN ('traffic', 'construction', 'accident', 'weather', 'strike', 'event', 'other')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX idx_news_location ON news_events(location);
+CREATE INDEX idx_news_impact ON news_events(impact);
+CREATE INDEX idx_news_event_date ON news_events(event_date);
+CREATE INDEX idx_news_active ON news_events(is_active);
+
+COMMENT ON TABLE news_events IS 'Stores news and traffic events that may affect shipment delivery';
+COMMENT ON COLUMN news_events.impact IS 'Impact level on logistics: low, medium, high';
+COMMENT ON COLUMN news_events.event_type IS 'Type of event: traffic, construction, accident, weather, strike, event, other';
+
+-- ============================================================================
+-- 3. ROUTE ANALYSIS TABLE
+-- ============================================================================
+-- Stores route information and analysis
+CREATE TABLE IF NOT EXISTS route_analysis (
+    route_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    origin VARCHAR(255) NOT NULL,
+    destination VARCHAR(255) NOT NULL,
+    waypoints JSONB,
+    total_distance_km DECIMAL(10, 2),
+    estimated_duration_minutes INTEGER,
+    route_hash VARCHAR(64) UNIQUE, -- Hash of origin+destination for quick lookup
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_route_origin ON route_analysis(origin);
+CREATE INDEX idx_route_destination ON route_analysis(destination);
+CREATE INDEX idx_route_hash ON route_analysis(route_hash);
+
+COMMENT ON TABLE route_analysis IS 'Stores route information for shipment analysis';
+COMMENT ON COLUMN route_analysis.waypoints IS 'JSON array of intermediate locations along the route';
+COMMENT ON COLUMN route_analysis.route_hash IS 'MD5 hash of origin+destination for caching';
+
+-- ============================================================================
+-- 4. AGENT TASKS TABLE
+-- ============================================================================
+-- Tracks AI agent task execution (Langflow workflows)
+CREATE TABLE IF NOT EXISTS agent_tasks (
+    id SERIAL PRIMARY KEY,
+    task_type VARCHAR(50) NOT NULL CHECK (task_type IN ('weather_analysis', 'news_analysis', 'eta_calculation', 'full_analysis')),
+    agent_name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
+    priority INTEGER DEFAULT 5,
+    shipment_id UUID REFERENCES shipments(shipment_id) ON DELETE CASCADE,
+    
+    -- Langflow integration (optional)
+    langflow_flow_id VARCHAR(255),
+    langflow_session_id VARCHAR(255),
+    
+    -- Task data
+    input_data JSONB,
+    output_data JSONB,
+    error_message TEXT,
+    
+    -- AI model info
+    model_used VARCHAR(100),
+    tokens_used INTEGER,
+    
+    -- Timing
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    execution_time_ms INTEGER,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_agent_tasks_shipment ON agent_tasks(shipment_id);
+CREATE INDEX idx_agent_tasks_type ON agent_tasks(task_type);
+CREATE INDEX idx_agent_tasks_status ON agent_tasks(status);
+CREATE INDEX idx_agent_tasks_created ON agent_tasks(created_at);
+
+COMMENT ON TABLE agent_tasks IS 'Tracks AI agent task execution and Langflow workflow runs';
+COMMENT ON COLUMN agent_tasks.langflow_flow_id IS 'Langflow workflow ID that was executed';
+COMMENT ON COLUMN agent_tasks.langflow_session_id IS 'Langflow session ID for tracking';
+
+-- ============================================================================
+-- 5. AGENT ANALYSIS LOGS TABLE (Enhanced)
+-- ============================================================================
+-- Stores complete analysis results from AI agents
+CREATE TABLE IF NOT EXISTS agent_analysis_logs (
+    log_id SERIAL PRIMARY KEY,
+    shipment_id UUID REFERENCES shipments(shipment_id) ON DELETE CASCADE,
+    task_id INTEGER REFERENCES agent_tasks(id) ON DELETE SET NULL,
+    analysis_type VARCHAR(50) NOT NULL CHECK (analysis_type IN ('weather_check', 'news_check', 'eta_calculation', 'full_analysis')),
+    
+    -- Weather data (references weather_data table)
+    weather_data_ids UUID[],
+    weather_summary TEXT,
+    weather_severity VARCHAR(20),
+    weather_delay_minutes INTEGER DEFAULT 0,
+    
+    -- News data (references news_events table)
+    news_event_ids UUID[],
+    news_items JSONB,
+    news_impact_level VARCHAR(20),
+    news_delay_minutes INTEGER DEFAULT 0,
+    
+    -- ETA calculation
+    old_eta TIMESTAMP,
+    new_eta TIMESTAMP,
+    total_delay_minutes INTEGER,
+    
+    -- AI reasoning (from watsonx.ai)
+    reasoning TEXT,
+    confidence_score DECIMAL(5, 4),
+    ai_model_used VARCHAR(100),
+    prompt_used TEXT,
+    
+    -- Metadata
+    use_dummy_data BOOLEAN DEFAULT false,
+    processing_time_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_agent_analysis_shipment ON agent_analysis_logs(shipment_id);
+CREATE INDEX idx_agent_analysis_task ON agent_analysis_logs(task_id);
+CREATE INDEX idx_agent_analysis_type ON agent_analysis_logs(analysis_type);
+CREATE INDEX idx_agent_analysis_created ON agent_analysis_logs(created_at);
+
+COMMENT ON TABLE agent_analysis_logs IS 'Stores detailed analysis logs from the multi-agent AI system';
+COMMENT ON COLUMN agent_analysis_logs.weather_data_ids IS 'Array of weather_data UUIDs used in analysis';
+COMMENT ON COLUMN agent_analysis_logs.news_event_ids IS 'Array of news_events UUIDs used in analysis';
+COMMENT ON COLUMN agent_analysis_logs.reasoning IS 'AI-generated reasoning from watsonx.ai LLM';
+COMMENT ON COLUMN agent_analysis_logs.ai_model_used IS 'watsonx.ai model ID used for reasoning';
+
+-- ============================================================================
+-- VIEWS FOR EASY QUERYING
+-- ============================================================================
+
+-- View for active weather scenarios
+CREATE OR REPLACE VIEW active_weather_scenarios AS
+SELECT 
+    location,
+    scenario,
+    severity,
+    delay_minutes,
+    summary
+FROM weather_data
+WHERE is_active = true
+ORDER BY location, scenario;
+
+-- View for active news events
+CREATE OR REPLACE VIEW active_news_events AS
+SELECT 
+    location,
+    title,
+    impact,
+    delay_minutes,
+    event_type,
+    event_date
+FROM news_events
+WHERE is_active = true
+ORDER BY event_date DESC, location;
+
+-- View for recent agent tasks
+CREATE OR REPLACE VIEW recent_agent_tasks AS
+SELECT
+    t.id as task_id,
+    t.shipment_id,
+    t.task_type,
+    t.agent_name,
+    t.status,
+    t.execution_time_ms,
+    t.created_at,
+    s.shipment_number
+FROM agent_tasks t
+LEFT JOIN shipments s ON t.shipment_id = s.shipment_id
+ORDER BY t.created_at DESC
+LIMIT 100;
+
+-- ============================================================================
+-- GRANTS (adjust user as needed)
+-- ============================================================================
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON weather_data TO logistics_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON news_events TO logistics_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON route_analysis TO logistics_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON agent_tasks TO logistics_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON agent_analysis_logs TO logistics_user;
+
+GRANT SELECT ON active_weather_scenarios TO logistics_user;
+GRANT SELECT ON active_news_events TO logistics_user;
+GRANT SELECT ON recent_agent_tasks TO logistics_user;
+
 
 -- ============================================================================
 -- SCHEMA CREATION COMPLETE

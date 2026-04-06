@@ -50,16 +50,11 @@ spec:
             configMapKeyRef:
               name: logistics-config
               key: EXTERNAL_TRACKING_SERVICE_URL
-        # - name: VITE_NOTIFICATION_SERVICE_URL
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: logistics-config
-        #       key: NOTIFICATION_SERVICE_URL
-        # - name: VITE_AI_AGENT_SERVICE_URL
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: logistics-config
-        #       key: AI_AGENT_SERVICE_URL
+        - name: VITE_AIAGENT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: logistics-config
+              key: AIAGENT_SERVICE_URL
         resources:
           requests:
             memory: "1024Mi"

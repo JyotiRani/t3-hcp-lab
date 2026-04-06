@@ -94,23 +94,23 @@
         
     - name: Verify instana-agent-daemonset.yaml exists locally
       stat:
-        path: k8s-instana/instana-agent-daemonset.yaml
+        path: k3s-instana/instana-agent-daemonset.yaml
       delegate_to: localhost
       become: no
       register: agent_yaml_local
       
     - name: Fail if instana-agent-daemonset.yaml not found
       fail:
-        msg: "instana-agent-daemonset.yaml not found in k8s-instana/ directory"
+        msg: "instana-agent-daemonset.yaml not found in k3s-instana/ directory"
       when: not agent_yaml_local.stat.exists
       
     - name: Copy Instana agent DaemonSet to remote server
       copy:
-        src: k8s-instana/instana-agent-daemonset.yaml
+        src: k3s-instana/instana-agent-daemonset.yaml
         dest: /tmp/instana-agent-daemonset.yaml
         mode: '0644'
         
-    - name: Deploy Instana Agent DaemonSet (with K8s monitoring)
+    - name: Deploy Instana Agent DaemonSet (with k3s monitoring)
       command: kubectl apply -f /tmp/instana-agent-daemonset.yaml
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
@@ -183,8 +183,8 @@
           - "  kubectl logs -f deployment/instana-agent-operator -n {{ instana_namespace }}"
           - ""
           - "To update agent configuration:"
-          - "  1. Edit k8s-instana/instana-agent-remote.yaml"
-          - "  2. Run: kubectl apply -f k8s-instana/instana-agent-remote.yaml"
+          - "  1. Edit k3s-instana/instana-agent-remote.yaml"
+          - "  2. Run: kubectl apply -f k3s-instana/instana-agent-remote.yaml"
           - ""
           - "To uninstall:"
           - "  kubectl delete -f /tmp/instana-agent-remote.yaml"
@@ -192,7 +192,7 @@
           - "=========================================="
           - ""
           - "IMPORTANT: If you see placeholder warnings above,"
-          - "update k8s-instana/instana-agent-remote.yaml with your"
+          - "update k3s-instana/instana-agent-remote.yaml with your"
           - "Instana credentials and rerun this playbook."
           - "=========================================="
 

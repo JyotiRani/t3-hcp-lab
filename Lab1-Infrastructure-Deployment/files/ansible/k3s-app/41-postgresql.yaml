@@ -7,7 +7,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path  # EKS: Use gp2 for better performance and cost
+  storageClassName: local-path ##STORAGE_CLASS##  # EKS-->gp2, K3s-->local-path
   resources:
     requests:
       storage: 20Gi

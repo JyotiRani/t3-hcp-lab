@@ -34,7 +34,7 @@
         dest: "/tmp/{{ item | basename }}"
         mode: '0644'
       with_fileglob:
-        - "k8s-app/*.yaml"
+        - "k3s-app/*.yaml"
 
     - name: Apply Kubernetes manifests
       command: kubectl apply -f /tmp/ --timeout=300s
