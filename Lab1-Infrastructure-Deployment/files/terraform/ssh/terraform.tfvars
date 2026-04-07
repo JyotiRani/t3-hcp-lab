@@ -12,4 +12,4 @@ ssh_public_key = "##SSH_PUBLIC_KEY##"
 
 
 # Tags
-tags = ["t3-lab-ssh-##LAB_USER_ID##"]
+tags = ["t3-lab-ssh-joy01"]

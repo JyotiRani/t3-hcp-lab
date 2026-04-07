@@ -21,7 +21,7 @@ zone   = "us-south-1"
 resource_group_name = "apac-ce-t3-26"
 
 # VSI Configuration
-vsi_name    = "t3-lab-vsi-##LAB_USER_ID##"
+vsi_name    = "t3-lab-vsi-joy01"
 vsi_profile = "bxf-8x32"  # 8 vCPUs, 32 GB RAM
 
 # OS Image
@@ -34,5 +34,5 @@ install_helm = true
 install_k9s  = false
 
 # Tags
-tags = ["k3s-lab-vsi-##LAB_USER_ID##"]
+tags = ["k3s-lab-vsi-joy01"]
 
