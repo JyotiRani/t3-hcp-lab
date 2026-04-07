@@ -27,7 +27,7 @@ spec:
     endpointPort: "443"
 
     env:
-      INSTANA_KUBERNETES_CLUSTER_NAME: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+      INSTANA_KUBERNETES_CLUSTER_NAME: "t3-lab-k3s-cluster-##LAB_USER_ID##"
 
     configuration_yaml: |
       # Remote Sensor Configurations

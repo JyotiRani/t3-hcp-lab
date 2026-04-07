@@ -46,9 +46,9 @@ spec:
         - name: INSTANA_ZONE
           value: "t3-lab-k3s-zone-##LAB_USER_ID##"
         - name: CLUSTER_NAME
-          value: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+          value: "t3-lab-k3s-cluster-##LAB_USER_ID##"
         - name: INSTANA_KUBERNETES_CLUSTER_NAME
-          value: "t3-lab-k3s-cluster-#LAB_USER_ID##"
+          value: "t3-lab-k3s-cluster-##LAB_USER_ID##"
         - name: INSTANA_AGENT_KEY_FILE_PATH
           value: "/opt/instana/agent/etc/instana/com.instana.agent.main.sender.Backend.cfg"
         volumeMounts:
