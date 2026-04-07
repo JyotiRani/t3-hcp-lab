@@ -1,7 +1,7 @@
 # Variables for SSH Key Creation (Step 1)
 
 variable "ibmcloud_api_key" {
-  description = "IBM Cloud API Key"
+  description = "IBM Cloud API Key edit"
   type        = string
   sensitive   = true
 }
