@@ -1,6 +1,6 @@
 # IBM Cloud API Key
 variable "ibmcloud_api_key" {
-  description = "IBM Cloud API Key edit"
+  description = "IBM Cloud API Key"
   type        = string
   sensitive   = true
 }
